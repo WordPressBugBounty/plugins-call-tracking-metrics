@@ -2,8 +2,8 @@
 Contributors: CallTrackingMetrics
 Tags: Call tracking, Conversation analytics, Marketing Attribution, Google Ads, Advertising, SEO
 Requires at least: 3.5
-Tested up to: 6.7.2
-Stable tag: 1.2.15
+Tested up to: 6.8.2
+Stable tag: 1.2.16
 
 Discover which marketing campaigns, website pages, and search keywords drive phone calls and conversions. Integrate with popular form plugins.
 
@@ -29,6 +29,10 @@ To use our call tracking plugin, you will need an active CallTrackingMetrics acc
 * Gravity Forms integration
 
 == Changelog ==
+
+= 1.2.16 =
+* tested with wordpress 6.8.2 and PHP 8.4.4
+* verify build
 
 = 1.2.15 =
 * test with wordpress 6.7.2

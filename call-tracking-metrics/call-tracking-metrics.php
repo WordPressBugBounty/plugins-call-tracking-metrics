@@ -4,7 +4,7 @@
 	Plugin URI: https://www.calltrackingmetrics.com/
 	Description: View your CallTrackingMetrics daily call volume in your WordPress Dashboard, and integrate with Contact Form 7 and Gravity Forms.
 	Author: CallTrackingMetrics
-	Version: 1.2.15
+	Version: 1.2.16
 	Author URI: https://www.calltrackingmetrics.com/
 */
 

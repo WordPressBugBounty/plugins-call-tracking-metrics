@@ -1,0 +1,35 @@
+/* npx @tailwindcss/cli -i ./css/tailwind.css -o ./css/optmized.css --watch */
+
+/* CallTrackingMetrics Brand Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Open+Sans:wght@300;400;600;700&display=swap');
+
+@import "tailwindcss";
+
+/* CallTrackingMetrics Brand Colors */
+@layer base {
+  :root {
+    --ctm-primary: #02bdf6;
+    --ctm-secondary: #16294f;
+    --ctm-accent: #e6f7ff;
+    --ctm-dark: #324a85;
+  }
+  
+  /* Brand Typography */
+  body {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+  }
+  
+  .font-brand-heading {
+    font-family: "Montserrat", sans-serif;
+  }
+  
+  .font-brand-body {
+    font-family: "Open Sans", sans-serif;
+  }
+}

@@ -1,38 +1,70 @@
 === CallTrackingMetrics ===
 Contributors: CallTrackingMetrics
 Tags: Call tracking, Conversation analytics, Marketing Attribution, Google Ads, Advertising, SEO
-Requires at least: 3.5
-Tested up to: 6.8.2
-Stable tag: 1.2.16
-
-Discover which marketing campaigns, website pages, and search keywords drive phone calls and conversions. Integrate with popular form plugins.
+Requires at least: 6.5
+Tested up to: 6.9
+Stable tag: 2.1.7
+Requires at least: 6.0
+Tested up to: 6.4
+Requires PHP: 8.2
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 
-CallTrackingMetrics is a conversation analytics platform that enables marketers to drive data-backed advertising strategies, track every conversion, and optimize ad spend. Discover which marketing campaigns are generating leads and conversions, and use that data to automate lead flows and create better buyer experiences—-across all communication channels.
-
-Start tracking your conversations through our convenient WordPress plugin that includes a dashboard widget which automatically displays your CallTrackingMetrics activities by day. As an added value, you can also integrate with Contact Form 7 and Gravity Forms to see online form data alongside your conversation activities.
-
-Through this integration, you’ll discover exactly which marketing campaigns, site content, and keywords are driving conversions, allowing you to optimize campaigns around true ROI.
+CallTrackingMetrics integrates with your WordPress site to provide powerful call tracking and attribution.
 
 == Installation ==
 
-To use our call tracking plugin, you will need an active CallTrackingMetrics account, and will need to enable API Integration on your account. You can then copy the Access Key and Secret Key into the plugin and enable the features you want to use. The plugin has more information on how to do this.
-
-= Features =
-
-* Easy to configure
-* Call tracking from a full range of sources
-* Know how many of your phone calls are repeat
-* Discover which marketing sources provide the best ROI
-* Contact Form 7 integration
-* Gravity Forms integration
+1. Upload the plugin files to the `/wp-content/plugins/call-tracking-metrics` directory, or install the plugin through the WordPress plugins screen directly.
+2. Activate the plugin through the 'Plugins' screen in WordPress.
+3. Use the Settings -> CallTrackingMetrics screen to configure the plugin.
 
 == Changelog ==
 
-= 1.2.16 =
-* tested with wordpress 6.8.2 and PHP 8.4.4
-* verify build
+= 2.1.7 =
+* Fix: Gravity Forms phone detection now prioritizes the field type, matching legacy behavior.
+
+= 2.1.6 =
+* Fix: Ensure all Gravity Forms and Contact Form 7 forms are visible in the "Manage Forms" tab, not just imported ones.
+* Fix: Resolve PHP warning in Contact Form 7 integration caused by invalid regex pattern.
+
+= 2.1.5 =
+* Fix: Prevent settings checkboxes from reverting to enabled state on save.
+* Fix: Allow manual override of tracking script to correctly save and persist custom edits.
+* Fix: Ensure fetching tracking script does not automatically save to database.
+* Fix: Granular duplicate prevention options (Session ID vs IP) are now correctly respected.
+* UI: Remove non-functional "Refresh Script" button.
+
+= 2.1.4 =
+* minor fixes
+
+= 2.1.3 =
+* Fix CF7 mail sending
+
+= 2.1.2 =
+* Fixed Gravity Forms redirect regression by restoring AJAX response handling.
+
+= 2.1.1 =
+* Downgraded PHP requirement to 8.2 for broader environment compatibility.
+* Fixed Contact Form 7 integration custom field mapping regression.
+* Improved API service to preserve nested form reactor data.
+
+= 2.1.0 =
+* Fixed Gravity Forms integration custom field mapping regression.
+* Added support for CTM_API_BASE_URL constant for environment-specific API overrides.
+* Improved duplicate submission prevention logic.
+* Added detailed debug logging system.
+
+= 2.0.3 =
+
+= 2.0 =
+* Major Update: Modernized codebase with improved performance and reliability
+* Added comprehensive duplicate submission prevention for forms
+* Added support for regional API endpoints (Global vs. Europe)
+* Improved Contact Form 7 and Gravity Forms integrations
+* Enhanced security and logging capabilities
+* Updated dependencies and compatibility checks
 
 = 1.2.15 =
 * test with wordpress 6.7.2

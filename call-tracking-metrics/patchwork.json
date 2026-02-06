@@ -1,0 +1,32 @@
+{
+  "redefinable-internals": [
+    "file_get_contents",
+    "file_exists",
+    "filesize",
+    "stat",
+    "tempnam",
+    "sys_get_temp_dir",
+    "fopen",
+    "fputcsv",
+    "fclose",
+    "unlink",
+    "headers_list",
+    "class_exists",
+    "fileperms",
+    "memory_get_usage",
+    "method_exists",
+    "function_exists",
+    "ini_get",
+    "memory_get_peak_usage",
+    "disk_free_space",
+    "glob",
+    "is_readable",
+    "count",
+    "sys_getloadavg",
+    "defined",
+    "constant",
+    "version_compare",
+    "dirname",
+    "date"
+  ]
+} 

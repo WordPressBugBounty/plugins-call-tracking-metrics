@@ -104,72 +104,49 @@ class FormImportService
     public function getAvailableForms(string $apiKey, string $apiSecret): ?array
     {
         try {
-            // Get forms from the form_reactors endpoint
-            $formsResponse = $this->apiService->getFormsDirect($apiKey, $apiSecret);
-            
-            if (!$formsResponse) {
-                $this->logInternal('Form Import Error: No response from forms API', 'error');
-                return null;
-            }
+            $page = 1;
+            $perPage = 100;
+            $maxPages = 50;
+            $allFormsById = [];
 
-            // Handle the response format from /api/v1/accounts/{account_id}/form_reactors
-            $forms = [];
-            if (isset($formsResponse['forms'])) {
-                // New format - forms array
-                $forms = $formsResponse['forms'];
-            } elseif (isset($formsResponse['form_reactors'])) {
-                // Old format - form_reactors array
-                $forms = $formsResponse['form_reactors'];
-            } else {
-                // Direct array of forms
-                $forms = $formsResponse;
-            }
+            while ($page <= $maxPages) {
+                $pageResponse = $this->getAvailableFormsPaginated($apiKey, $apiSecret, $page, $perPage);
 
-            if (empty($forms)) {
-                $this->logInternal('Form Import Error: No forms found in API response', 'error');
-                return null;
-            }
-
-            // Filter and format forms for import
-            $availableForms = [];
-            foreach ($forms as $form) {
-                if (isset($form['id']) && isset($form['name'])) {
-                    // Handle both old and new field structures
-                    $fields = [];
-                    if (isset($form['fields']) && is_array($form['fields'])) {
-                        // Old format - fields
-                        $fields = $form['fields'];
-                    } elseif (isset($form['custom_fields']) && is_array($form['custom_fields'])) {
-                        // New format - custom_fields
-                        $fields = $form['custom_fields'];
-                    }
-
-                    $availableForms[] = [
-                        'id' => $form['id'],
-                        'name' => $form['name'],
-                        'description' => $form['description'] ?? '',
-                        'fields' => $fields,
-                        'created_at' => $form['created_at'] ?? '',
-                        'updated_at' => $form['updated_at'] ?? '',
-                        'account_id' => $form['account_id'] ?? '',
-                        // Include additional form properties for better mapping
-                        'custom_fields' => $form['custom_fields'] ?? [],
-                        'tracking_number' => $form['tracking_number'] ?? null,
-                        'managed_mode' => $form['managed_mode'] ?? '',
-                        'managed_id' => $form['managed_id'] ?? '',
-                        'style' => $form['style'] ?? '',
-                        'theme' => $form['theme'] ?? '',
-                        'completion_text' => $form['completion_text'] ?? '',
-                        'error_text' => $form['error_text'] ?? ''
-                    ];
-                    
+                if (!$pageResponse || empty($pageResponse['forms'])) {
+                    break;
                 }
+
+                foreach ($pageResponse['forms'] as $form) {
+                    if (isset($form['id'])) {
+                        $allFormsById[(string) $form['id']] = $form;
+                    }
+                }
+
+                $pagination = $pageResponse['pagination'] ?? [];
+                $totalPages = max(1, (int) ($pagination['total_pages'] ?? 1));
+
+                if ($page >= $totalPages) {
+                    break;
+                }
+
+                $nextPage = $pagination['next_page'] ?? null;
+                if (is_numeric($nextPage) && (int) $nextPage > $page) {
+                    $page = (int) $nextPage;
+                    continue;
+                }
+
+                ++$page;
             }
 
-            if (empty($availableForms)) {
+            if (empty($allFormsById)) {
                 $this->logInternal('Form Import Error: No valid forms found after processing', 'error');
                 return null;
             }
+
+            $availableForms = array_values($allFormsById);
+            usort($availableForms, static function (array $a, array $b): int {
+                return strcasecmp((string) ($a['name'] ?? ''), (string) ($b['name'] ?? ''));
+            });
 
             return $availableForms;
         } catch (\Exception $e) {

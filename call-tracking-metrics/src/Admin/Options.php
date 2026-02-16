@@ -130,7 +130,7 @@ class Options
         // Duplicate Prevention Settings
         register_setting("call-tracking-metrics", "ctm_duplicate_prevention_enabled", [
             'type' => 'boolean',
-            'default' => true,
+            'default' => false,
             'sanitize_callback' => 'rest_sanitize_boolean'
         ]);
         register_setting("call-tracking-metrics", "ctm_duplicate_prevention_expiration", [
@@ -252,6 +252,9 @@ class Options
      */
     public function initialize(): void
     {
+        // Run one-time update migration before applying defaults.
+        $this->maybeDisableDuplicatePreventionOnUpdate();
+
         // Ensure duplicate prevention settings have proper defaults
         $this->ensureDuplicatePreventionDefaults();
         
@@ -341,8 +344,20 @@ class Options
             // Generate content for the active tab
             $tab_content = $this->getTabContent($active_tab);
             
+            // Show this one-time migration notice at the top of our page layout.
+            $showDuplicatePreventionMigrationNotice = (bool) get_option('ctm_duplicate_prevention_update_notice_pending', false);
+            if ($showDuplicatePreventionMigrationNotice) {
+                delete_option('ctm_duplicate_prevention_update_notice_pending');
+            }
+
             // Render the complete settings page
-            $this->renderer->renderView('settings-page', compact('notices', 'active_tab', 'tab_content', 'apiStatus'));
+            $this->renderer->renderView('settings-page', compact(
+                'notices',
+                'active_tab',
+                'tab_content',
+                'apiStatus',
+                'showDuplicatePreventionMigrationNotice'
+            ));
         } catch (\Exception $e) {
             // Log the error and show a user-friendly message
             if ($this->loggingSystem) {
@@ -366,9 +381,11 @@ class Options
      */
     public function displaySettingsNotices(): void
     {
-        // Only show notices on our settings page
         $screen = get_current_screen();
-        if (!$screen || $screen->id !== 'toplevel_page_call-tracking-metrics') {
+        $is_ctm_settings_screen = $screen && $screen->id === 'toplevel_page_call-tracking-metrics';
+
+        // Only show settings notices on our settings page
+        if (!$is_ctm_settings_screen) {
             return;
         }
         
@@ -393,14 +410,10 @@ class Options
     {
         $apiKey = get_option('ctm_api_key');
         $apiSecret = get_option('ctm_api_secret');
-        
-        // Debug logging
-        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-            $this->loggingSystem->logActivity('isApiConnected() called - API Key exists: ' . (!empty($apiKey) ? 'yes' : 'no') . ', API Secret exists: ' . (!empty($apiSecret) ? 'yes' : 'no'), 'debug');
-        }
+        $debugEnabled = $this->loggingSystem && $this->loggingSystem->isDebugEnabled();
         
         if (empty($apiKey) || empty($apiSecret)) {
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            if ($debugEnabled) {
                 $this->loggingSystem->logActivity('isApiConnected() returning false - missing credentials', 'debug');
             }
             return false;
@@ -409,9 +422,6 @@ class Options
         // Check if we have a cached connection status
         $lastConnectionTest = get_transient('ctm_last_connection_status');
         if ($lastConnectionTest !== false) {
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('isApiConnected() returning cached status: ' . $lastConnectionTest, 'debug');
-            }
             return $lastConnectionTest === 'connected';
         }
         
@@ -419,7 +429,7 @@ class Options
         $trackingScript = get_option('call_track_account_script');
         if (empty($trackingScript)) {
             // Try to fetch the tracking script from the API
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+            if ($debugEnabled) {
                 $this->loggingSystem->logActivity('isApiConnected() - no tracking script, attempting to fetch from API', 'debug');
             }
             
@@ -428,7 +438,7 @@ class Options
                 // Successfully fetched tracking script
                 update_option('call_track_account_script', $trackingScript);
                 set_transient('ctm_last_connection_status', 'connected', 5 * 60);
-                if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                if ($debugEnabled) {
                     $this->loggingSystem->logActivity('isApiConnected() returning true - successfully fetched tracking script', 'debug');
                 }
                 return true;
@@ -436,13 +446,10 @@ class Options
         } else {
             // Already have tracking script
             set_transient('ctm_last_connection_status', 'connected', 5 * 60);
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('isApiConnected() returning true - has existing tracking script', 'debug');
-            }
             return true;
         }
         
-        if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+        if ($debugEnabled) {
             $this->loggingSystem->logActivity('isApiConnected() returning false - could not fetch tracking script', 'debug');
         }
         return false;
@@ -553,7 +560,7 @@ class Options
      * Ensure duplicate prevention settings have proper defaults
      * 
      * This method ensures that new installations and existing installations
-     * have the duplicate prevention settings enabled by default.
+     * have a consistent default for duplicate prevention settings.
      * 
      * @since 2.0.0
      * @return void
@@ -563,9 +570,9 @@ class Options
         // Check if duplicate prevention settings exist or are disabled, set defaults
         $enabled = get_option('ctm_duplicate_prevention_enabled', 'not_set');
         if ($enabled === 'not_set') {
-            update_option('ctm_duplicate_prevention_enabled', true);
+            update_option('ctm_duplicate_prevention_enabled', false);
             if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('Set duplicate prevention enabled to true (was not set)', 'debug');
+                $this->loggingSystem->logActivity('Set duplicate prevention enabled to false (was not set)', 'debug');
             }
         }
         
@@ -601,6 +608,77 @@ class Options
                 $this->loggingSystem->logActivity('Set auto-inject tracking script to true (was not set)', 'debug');
             }
         }
+    }
+
+    /**
+     * One-time migration: disable duplicate prevention after upgrading to 2.1.8.
+     *
+     * This applies to existing installs only and shows a one-time admin notice.
+     * Fresh installs are skipped.
+     *
+     * @since 2.1.8
+     * @return void
+     */
+    private function maybeDisableDuplicatePreventionOnUpdate(): void
+    {
+        if ((bool) get_option('ctm_duplicate_prevention_migrated_2_1_8', false)) {
+            return;
+        }
+
+        if (!$this->hasExistingPluginConfiguration()) {
+            update_option('ctm_duplicate_prevention_migrated_2_1_8', true);
+            return;
+        }
+
+        $enabled = get_option('ctm_duplicate_prevention_enabled', 'not_set');
+        $was_enabled = ($enabled === 'not_set') ? true : (bool) $enabled;
+
+        if ($was_enabled) {
+            update_option('ctm_duplicate_prevention_enabled', false);
+            update_option('ctm_duplicate_prevention_update_notice_pending', true);
+
+            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
+                $this->loggingSystem->logActivity('Disabled duplicate prevention via 2.1.8 update migration', 'system');
+            }
+        }
+
+        update_option('ctm_duplicate_prevention_migrated_2_1_8', true);
+    }
+
+    /**
+     * Determine whether this appears to be an existing configured install.
+     *
+     * @since 2.1.8
+     * @return bool
+     */
+    private function hasExistingPluginConfiguration(): bool
+    {
+        if (!empty((string) get_option('ctm_api_key', ''))) {
+            return true;
+        }
+
+        if (!empty((string) get_option('ctm_api_secret', ''))) {
+            return true;
+        }
+
+        $sentinel_options = [
+            'ctm_api_auth_account',
+            'ctm_api_tracking_enabled',
+            'ctm_api_cf7_enabled',
+            'ctm_api_gf_enabled',
+            'ctm_debug_enabled',
+            'ctm_duplicate_prevention_enabled',
+            'ctm_duplicate_prevention_use_session',
+            'ctm_duplicate_prevention_fallback_ip',
+        ];
+
+        foreach ($sentinel_options as $option_name) {
+            if (get_option($option_name, 'not_set') !== 'not_set') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

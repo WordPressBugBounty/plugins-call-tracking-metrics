@@ -722,7 +722,16 @@ class ApiService
      */
     private function makeRequest(string $method, string $endpoint, array $data = [], string $apiKey = '', string $apiSecret = '', string $contentType = 'application/json'): array
     {
+        $normalizedMethod = strtoupper($method);
         $url = $this->baseUrl . $endpoint;
+
+        // Attach query parameters for GET requests.
+        if ($normalizedMethod === 'GET' && !empty($data)) {
+            $queryString = http_build_query($data);
+            if ($queryString !== '') {
+                $url .= (strpos($url, '?') === false ? '?' : '&') . $queryString;
+            }
+        }
 
         // Use internal logging system
         $loggingSystem = null;
@@ -744,7 +753,7 @@ class ApiService
         }
 
         $args = [
-            'method'  => strtoupper($method),
+            'method'  => $normalizedMethod,
             'timeout' => $this->timeout,
             'headers' => [
                 'User-Agent'   => $this->userAgent,
@@ -758,7 +767,7 @@ class ApiService
         }
 
         // Handle body encoding
-        if (in_array($method, ['POST', 'PUT']) && !empty($data)) {
+        if (in_array($normalizedMethod, ['POST', 'PUT'], true) && !empty($data)) {
             if ($contentType === 'application/json') {
                 $args['body'] = json_encode($data);
             } elseif ($contentType === 'application/x-www-form-urlencoded') {

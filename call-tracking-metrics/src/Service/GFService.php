@@ -144,7 +144,8 @@ class GFService extends BaseFormService
                 $fieldsWithLabels['name'] = implode(' ', $nameValues);
             }
 
-            // Extract form_reactor fields with proper field detection
+            // Extract form_reactor fields with proper field detection.
+            // Keep legacy behavior from 1.2.16: default US country code for standard GF phone fields.
             $formReactor = [
                 'country_code' => ''
             ];
@@ -160,6 +161,9 @@ class GFService extends BaseFormService
                     if ($fieldType === 'phone') {
                         $rawValue = $entry[$field->id] ?? '';
                         $phoneNumber = $this->sanitizeFieldValue($rawValue, 'phone');
+                        if (($field->phoneFormat ?? '') === 'standard') {
+                            $formReactor['country_code'] = '1';
+                        }
                         if (!empty($phoneNumber)) {
                             break;
                         }
@@ -213,15 +217,6 @@ class GFService extends BaseFormService
             }
             if (!empty($emailField)) {
                 $formReactor['email'] = $emailField;
-            }
-            
-            // Find country code field
-            foreach ($fieldsWithLabels as $fieldName => $value) {
-                $fieldNameLower = strtolower($fieldName);
-                if (strpos($fieldNameLower, 'country') !== false) {
-                    $formReactor['country_code'] = $value;
-                    break;
-                }
             }
 
             // Restore legacy field mapping (field_{id}) for backward compatibility

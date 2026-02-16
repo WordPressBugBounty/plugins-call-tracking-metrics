@@ -279,7 +279,7 @@ $isApiUrlOverridden = $isApiUrlOverridden ?? false;
                 <p class="text-gray-600 text-sm mb-4"><?php _e('Prevent duplicate form submissions using CTM session tracking and IP-based fallback.', 'call-tracking-metrics'); ?></p>
 
                 <div class="flex items-center gap-2 mb-3">
-                    <input type="checkbox" id="ctm_duplicate_prevention_enabled" name="ctm_duplicate_prevention_enabled" value="1" class="mr-2" <?= checked(get_option('ctm_duplicate_prevention_enabled', 1), 1, false) ?>>
+                    <input type="checkbox" id="ctm_duplicate_prevention_enabled" name="ctm_duplicate_prevention_enabled" value="1" class="mr-2" <?= checked(get_option('ctm_duplicate_prevention_enabled', 0), 1, false) ?>>
                     <label for="ctm_duplicate_prevention_enabled" class="text-gray-700 select-none cursor-pointer font-medium"><?php _e('Enable duplicate submission prevention', 'call-tracking-metrics'); ?></label>
                 </div>
 

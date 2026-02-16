@@ -78,16 +78,14 @@ $log_stats = $log_stats ?? [];
                 <div class="space-y-3" id="logs-container">
                     <?php foreach ($available_dates as $date): ?>
                         <?php
-                        // Use the new database system to get grouped logs
-                        $grouped_logs = [];
+                        // Use the database system to get raw logs (newest first)
                         $logs = [];
                         if (isset($loggingSystem) && $loggingSystem) {
-                            $grouped_logs = $loggingSystem->getGroupedLogsForDate($date);
                             $logs = $loggingSystem->getLogsForDate($date);
                         }
                         if (empty($logs)) continue;
                         
-                        // Calculate statistics from grouped logs
+                        // Calculate statistics from raw logs
                         $error_count = 0;
                         $warning_count = 0;
                         $info_count = 0;
@@ -95,22 +93,23 @@ $log_stats = $log_stats ?? [];
                         $api_count = 0;
                         $total_size = 0;
                         
-                        foreach ($grouped_logs as $group) {
-                            switch ($group['type']) {
+                        foreach ($logs as $log) {
+                            $log_type = $log['type'] ?? 'debug';
+                            switch ($log_type) {
                                 case 'error':
-                                    $error_count += $group['count'];
+                                    $error_count++;
                                     break;
                                 case 'warning':
-                                    $warning_count += $group['count'];
+                                    $warning_count++;
                                     break;
                                 case 'info':
-                                    $info_count += $group['count'];
+                                    $info_count++;
                                     break;
                                 case 'debug':
-                                    $debug_count += $group['count'];
+                                    $debug_count++;
                                     break;
                                 case 'api':
-                                    $api_count += $group['count'];
+                                    $api_count++;
                                     break;
                             }
                         }
@@ -193,89 +192,42 @@ $log_stats = $log_stats ?? [];
                                 </div>
                             </div>
 
-                            <!-- Log entries (hidden by default) -->
+                            <!-- Log entries (hidden by default, chronological newest first) -->
                             <div id="log-<?= esc_attr($date) ?>" class="hidden mt-3 space-y-2">
-                                <?php foreach ($grouped_logs as $group): ?>
+                                <?php
+                                $type_colors = [
+                                    'error' => 'text-red-800 bg-red-50 border-red-200',
+                                    'warning' => 'text-yellow-800 bg-yellow-50 border-yellow-200',
+                                    'info' => 'text-blue-800 bg-blue-50 border-blue-200',
+                                    'debug' => 'text-gray-800 bg-gray-50 border-gray-200',
+                                    'api' => 'text-purple-800 bg-purple-50 border-purple-200',
+                                    'config' => 'text-indigo-800 bg-indigo-50 border-indigo-200',
+                                    'system' => 'text-green-800 bg-green-50 border-green-200'
+                                ];
+                                ?>
+                                <?php foreach ($logs as $entry): ?>
                                     <?php
-                                    $group_key = $group['key'];
-                                    $type = $group['type'];
-                                    $count = $group['count'];
-                                    $first_seen = $group['first_seen'];
-                                    $last_seen = $group['last_seen'];
-                                    $examples = $group['examples'];
-                                    
-                                    // Get type-specific styling
-                                    $type_colors = [
-                                        'error' => 'text-red-800 bg-red-50 border-red-200',
-                                        'warning' => 'text-yellow-800 bg-yellow-50 border-yellow-200',
-                                        'info' => 'text-blue-800 bg-blue-50 border-blue-200',
-                                        'debug' => 'text-gray-800 bg-gray-50 border-gray-200',
-                                        'api' => 'text-purple-800 bg-purple-50 border-purple-200',
-                                        'config' => 'text-indigo-800 bg-indigo-50 border-indigo-200',
-                                        'system' => 'text-green-800 bg-green-50 border-green-200'
-                                    ];
-                                    $color_class = $type_colors[$type] ?? 'text-gray-800 bg-gray-50 border-gray-200';
+                                    $entry_type = $entry['type'] ?? 'debug';
+                                    $entry_color_class = $type_colors[$entry_type] ?? 'text-gray-800 bg-gray-50 border-gray-200';
                                     ?>
-                                    <div class="border border-gray-200 rounded-lg overflow-hidden">
-                                        <!-- Group header -->
-                                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center gap-3">
-                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold <?= $color_class ?>">
-                                                        <?= strtoupper($type) ?>
-                                                    </span>
-                                                    <span class="text-sm font-medium text-gray-700"><?= $count ?> calls</span>
-                                                    <span class="text-xs text-gray-500">
-                                                        <?php
-                                                        $first_date = date('M j, Y g:i A', strtotime($first_seen));
-                                                        $last_date = date('M j, Y g:i A', strtotime($last_seen));
-                                                        if ($first_date === $last_date) {
-                                                            echo $first_date;
-                                                        } else {
-                                                            echo $first_date . ' - ' . $last_date;
-                                                        }
-                                                        ?>
-                                                    </span>
-                                                </div>
-                                            </div>
+                                    <div class="bg-gray-50 rounded p-3 border border-gray-200">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="text-xs text-gray-500 font-mono"><?= esc_html($entry['timestamp'] ?? '') ?></span>
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold <?= esc_attr($entry_color_class) ?>">
+                                                <?= esc_html(strtoupper((string) $entry_type)) ?>
+                                            </span>
                                         </div>
-                                        
-                                        <!-- Example entries -->
-                                        <div class="space-y-2 p-4" id="group-<?= esc_attr($group_key) ?>-entries">
-                                            <?php foreach ($group['examples'] as $example): ?>
-                                                <div class="bg-gray-50 rounded p-3 border-l-4 border-gray-300">
-                                                    <div class="flex items-center justify-between mb-1">
-                                                        <span class="text-xs text-gray-500 font-mono"><?= esc_html($example['timestamp']) ?></span>
-                                                    </div>
-                                                    <p class="text-gray-700 text-sm"><?= esc_html($example['message']) ?></p>
-                                                    <?php if (!empty($example['context'])): ?>
-                                                        <details class="mt-2">
-                                                            <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700 font-medium flex items-center">
-                                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                                                </svg>
-                                                                Context Details
-                                                            </summary>
-                                                            <pre class="mt-2 text-xs text-gray-600 bg-gray-100 p-2 rounded overflow-x-auto border"><?= esc_html(print_r($example['context'], true)) ?></pre>
-                                                        </details>
-                                                    <?php endif; ?>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-                                        
-                                        <?php if ($group['count'] > count($group['examples'])): ?>
-                                            <div class="mt-3 text-center p-4 border-t border-gray-200">
-                                                <button class="ctm-load-more-group-entries bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors duration-200" 
-                                                        data-group-key="<?= esc_attr($group_key) ?>" 
-                                                        data-date="<?= esc_attr($date) ?>" 
-                                                        data-current-count="<?= count($group['examples']) ?>" 
-                                                        data-total-count="<?= $group['count'] ?>">
-                                                    <?php _e('Load More Entries', 'call-tracking-metrics'); ?>
-                                                </button>
-                                                <p class="text-xs text-gray-500 mt-1">
-                                                    <?php printf(__('Showing %d of %d entries', 'call-tracking-metrics'), count($group['examples']), $group['count']); ?>
-                                                </p>
-                                            </div>
+                                        <p class="text-gray-700 text-sm" style="overflow-wrap:anywhere;word-break:break-word;"><?= esc_html($entry['message'] ?? '') ?></p>
+                                        <?php if (!empty($entry['context'])): ?>
+                                            <details class="mt-2">
+                                                <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700 font-medium flex items-center">
+                                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                                    </svg>
+                                                    Context Details
+                                                </summary>
+                                                <pre class="mt-2 text-xs text-gray-600 bg-gray-100 p-2 rounded overflow-x-auto border"><?= esc_html(print_r($entry['context'], true)) ?></pre>
+                                            </details>
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
@@ -507,142 +459,20 @@ $log_stats = $log_stats ?? [];
 
     // Event delegation for dynamically created elements
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('ctm-toggle-log-view')) {
-            const date = e.target.dataset.date;
+        const toggleButton = e.target.closest('.ctm-toggle-log-view');
+        if (toggleButton) {
+            const date = toggleButton.dataset.date;
             toggleLogView(date);
+            return;
         }
-        
-        if (e.target.classList.contains('ctm-clear-log')) {
-            const date = e.target.dataset.date;
+
+        const clearButton = e.target.closest('.ctm-clear-log');
+        if (clearButton) {
+            const date = clearButton.dataset.date;
             clearDebugLogs('debug_single', date);
+            return;
         }
-        
-        if (e.target.classList.contains('ctm-load-more-group-entries')) {
-            const groupKey = e.target.dataset.groupKey;
-            const date = e.target.dataset.date;
-            const currentCount = parseInt(e.target.dataset.currentCount) || 0;
-            const totalCount = parseInt(e.target.dataset.totalCount) || 0;
-            loadMoreGroupEntries(groupKey, date, currentCount, totalCount);
-        }
+
+        return;
     });
-
-    function loadMoreGroupEntries(groupKey, date, currentCount, totalCount) {
-        // Find the load more button and replace it with loading state
-        const loadMoreButton = document.querySelector(`[data-group-key="${groupKey}"][data-date="${date}"]`);
-        const loadMoreContainer = loadMoreButton.closest('.text-center');
-        const originalContent = loadMoreContainer.innerHTML;
-        
-        // Show loading state
-        loadMoreContainer.innerHTML = `
-            <div class="flex items-center justify-center space-x-3 py-4">
-                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <div class="text-blue-600 text-sm font-medium"><?php _e('Loading more entries...', 'call-tracking-metrics'); ?></div>
-            </div>
-        `;
-        
-        // AJAX call to load more entries for a specific group
-        const formData = new FormData();
-        formData.append('action', 'ctm_load_more_group_entries');
-        formData.append('nonce', '<?= wp_create_nonce('ctm_load_more_group_entries') ?>');
-        formData.append('date', date);
-        formData.append('group_key', groupKey);
-        formData.append('offset', currentCount);
-        formData.append('limit', 10); // Load 10 more entries at a time
-        
-        fetch('<?= admin_url('admin-ajax.php') ?>', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Add new entries to the group
-                const entriesContainer = document.getElementById(`group-${groupKey}-entries`);
-                if (entriesContainer && data.data.entries) {
-                    data.data.entries.forEach(entry => {
-                        const entryHtml = createLogEntryHtml(entry);
-                        entriesContainer.insertAdjacentHTML('beforeend', entryHtml);
-                    });
-                }
-                
-                // Update the load more button or remove it if all entries are loaded
-                const newCount = currentCount + (data.data.entries ? data.data.entries.length : 0);
-                if (newCount >= totalCount) {
-                    // All entries loaded, remove the load more button
-                    loadMoreContainer.innerHTML = `
-                        <p class="text-xs text-gray-500 mt-1">
-                            <?php _e('All entries loaded', 'call-tracking-metrics'); ?>
-                        </p>
-                    `;
-                } else {
-                    // Update button with new count
-                    loadMoreContainer.innerHTML = `
-                        <button class="ctm-load-more-group-entries bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors duration-200" 
-                                data-group-key="${groupKey}" 
-                                data-date="${date}" 
-                                data-current-count="${newCount}" 
-                                data-total-count="${totalCount}">
-                            <?php _e('Load More Entries', 'call-tracking-metrics'); ?>
-                        </button>
-                        <p class="text-xs text-gray-500 mt-1">
-                            <?php printf(__('Showing %d of %d entries', 'call-tracking-metrics'), '${newCount}', '${totalCount}'); ?>
-                        </p>
-                    `;
-                }
-                
-                ctmShowToast('More entries loaded successfully', 'success');
-            } else {
-                ctmShowToast(data.data.message || 'Failed to load more entries', 'error');
-                // Restore original button
-                loadMoreContainer.innerHTML = originalContent;
-            }
-        })
-        .catch(error => {
-            console.error('Error loading more group entries:', error);
-            ctmShowToast('Network error occurred while loading entries', 'error');
-            // Restore original button
-            loadMoreContainer.innerHTML = originalContent;
-        });
-    }
-
-
-
-    function createLogEntryHtml(entry) {
-        const typeColors = {
-            'error': 'text-red-800 bg-red-50 border-red-200',
-            'warning': 'text-yellow-800 bg-yellow-50 border-yellow-200',
-            'info': 'text-blue-800 bg-blue-50 border-blue-200',
-            'debug': 'text-gray-800 bg-gray-50 border-gray-200',
-            'api': 'text-purple-800 bg-purple-50 border-purple-200',
-            'config': 'text-indigo-800 bg-indigo-50 border-indigo-200',
-            'system': 'text-green-800 bg-green-50 border-green-200'
-        };
-        
-        const colorClass = typeColors[entry.type] || 'text-gray-800 bg-gray-50 border-gray-200';
-        
-        let contextHtml = '';
-        if (entry.context && Object.keys(entry.context).length > 0) {
-            contextHtml = `
-                <details class="mt-2">
-                    <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700 font-medium flex items-center">
-                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                        Context Details
-                    </summary>
-                    <pre class="mt-2 text-xs text-gray-600 bg-gray-100 p-2 rounded overflow-x-auto border">${JSON.stringify(entry.context, null, 2)}</pre>
-                </details>
-            `;
-        }
-        
-        return `
-            <div class="bg-gray-50 rounded p-3 border-l-4 border-gray-300">
-                <div class="flex items-center justify-between mb-1">
-                    <span class="text-xs text-gray-500 font-mono">${entry.timestamp}</span>
-                </div>
-                <p class="text-gray-700 text-sm">${entry.message}</p>
-                ${contextHtml}
-            </div>
-        `;
-    }
 </script>

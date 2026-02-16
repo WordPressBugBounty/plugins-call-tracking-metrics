@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'calltrackingmetrics/call-tracking-metrics',
-        'pretty_version' => '2.1.7',
-        'version' => '2.1.7.0',
+        'pretty_version' => '2.1.8',
+        'version' => '2.1.8.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -11,8 +11,8 @@
     ),
     'versions' => array(
         'calltrackingmetrics/call-tracking-metrics' => array(
-            'pretty_version' => '2.1.7',
-            'version' => '2.1.7.0',
+            'pretty_version' => '2.1.8',
+            'version' => '2.1.8.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',

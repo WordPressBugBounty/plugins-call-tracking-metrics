@@ -74,7 +74,6 @@ class CF7Service extends BaseFormService
             $phoneNumber = '';
             $callerName = '';
             $email = '';
-            $countryCode = '';
             
             // Find phone number field
             foreach ($data as $fieldName => $fieldValue) {
@@ -104,10 +103,6 @@ class CF7Service extends BaseFormService
                     $email = $this->sanitizeFieldValue($fieldValue);
                 }
                 
-                // Map country code field
-                if (strpos($fieldNameLower, 'country') !== false) {
-                    $countryCode = $this->sanitizeFieldValue($fieldValue);
-                }
             }
 
             // Build form_reactor array
@@ -116,9 +111,6 @@ class CF7Service extends BaseFormService
                 'caller_name'   => $callerName,
                 'email'         => $email,
             ];
-            if (!empty($countryCode)) {
-                $formReactor['country_code'] = $countryCode;
-            }
 
             // Filter mappedFields to only include custom fields (for 'field' array)
             // In CF7 1.2.16 example, 'field' only had custom fields like your-subject, your-message
@@ -130,8 +122,7 @@ class CF7Service extends BaseFormService
                 if (strpos($fieldNameLower, 'phone') !== false || 
                     strpos($fieldNameLower, 'tel') !== false ||
                     strpos($fieldNameLower, 'name') !== false ||
-                    strpos($fieldNameLower, 'email') !== false ||
-                    strpos($fieldNameLower, 'country') !== false) {
+                    strpos($fieldNameLower, 'email') !== false) {
                     continue;
                 }
                 $legacyFields[$fieldName] = $fieldValue;
@@ -360,6 +351,7 @@ class CF7Service extends BaseFormService
             'email' => 'email',
             'url' => 'url',
             'tel' => 'phone',
+            'intl_tel' => 'phone',
             'number' => 'number',
             'date' => 'date',
             'textarea' => 'textarea',

@@ -247,7 +247,7 @@ class LogAjax {
             // Filter logs by group key
             $grouped_logs = [];
             foreach ($all_logs as $log) {
-                $log_group_key = $this->getLogGroupKey($log);
+                $log_group_key = $this->loggingSystem->buildLogGroupKey($log);
                 if ($log_group_key === $group_key) {
                     $grouped_logs[] = $log;
                 }
@@ -267,71 +267,4 @@ class LogAjax {
             wp_send_json_error(['message' => 'Failed to load more entries: ' . $e->getMessage()]);
         }
     }
-
-    /**
-     * Generate a group key for log entries (copied from LoggingSystem for consistency)
-     * 
-     * @since 2.0.0
-     * @param array $log The log entry
-     * @return string A group key for this log entry
-     */
-    private function getLogGroupKey(array $log): string
-    {
-        $type = $log['type'];
-        $message = $log['message'];
-        $context = $log['context'] ?? [];
-        
-        // Special handling for API calls
-        if ($type === 'api' && isset($context['api_call_key'])) {
-            return 'api:' . $context['api_call_key'];
-        }
-        
-        // For other types, group by message pattern
-        if (strpos($message, 'API Request - URL:') === 0) {
-            // Extract URL and method for API requests
-            if (preg_match('/API Request - URL: ([^,]+), Method: (\w+)/', $message, $matches)) {
-                $url = $matches[1];
-                $method = $matches[2];
-                
-                // Normalize URL for grouping
-                $parsed_url = parse_url($url);
-                $path = $parsed_url['path'] ?? '';
-                
-                // Normalize common patterns
-                $normalized_path = $this->normalizeApiPath($path);
-                return 'api:' . strtoupper($method) . ':' . $normalized_path;
-            }
-        }
-        
-        // For other message types, group by first part of message
-        $words = explode(' ', $message);
-        $first_word = $words[0] ?? '';
-        return $type . ':' . $first_word;
-    }
-
-    /**
-     * Normalize API path for consistent grouping (copied from LoggingSystem for consistency)
-     * 
-     * @since 2.0.0
-     * @param string $path The API path
-     * @return string Normalized path
-     */
-    private function normalizeApiPath(string $path): string
-    {
-        // Remove trailing slash
-        $path = rtrim($path, '/');
-        
-        // Normalize common patterns
-        $patterns = [
-            '/\d+/' => '{id}',           // Replace numeric IDs
-            '/[a-f0-9-]{36}/' => '{uuid}', // Replace UUIDs
-            '/[a-f0-9]{8,}/' => '{hash}',  // Replace hashes
-        ];
-        
-        foreach ($patterns as $pattern => $replacement) {
-            $path = preg_replace($pattern, $replacement, $path);
-        }
-        
-        return $path;
-    }
-} 
+}

@@ -18,14 +18,14 @@
  * @author      CallTrackingMetrics Team
  * @copyright   2024 CallTrackingMetrics
  * @license     GPL-2.0+
- * @version     2.1.7
+ * @version     2.1.8
  * @link        https://calltrackingmetrics.com
  *
  * @wordpress-plugin
  * Plugin Name: CallTrackingMetrics
  * Plugin URI: https://calltrackingmetrics.com
  * Description: A call tracking solution for WordPress - tracks errors, analytics, security, performance and more
- * Version: 2.1.7
+ * Version: 2.1.8
  * Requires PHP: 8.2
  * Author: CallTrackingMetrics Team
  */
@@ -73,7 +73,7 @@ if (!defined('CTM_PLUGIN_FILE')) {
 
 // Define plugin version constant
 if (!defined('CTM_VERSION')) {
-    define('CTM_VERSION', '2.1.7');
+    define('CTM_VERSION', '2.1.8');
 }
 
 // Import required classes
@@ -397,10 +397,6 @@ class CallTrackingMetrics
 
                         // Localize admin tab control data
             $apiConnected = $this->adminOptions->isApiConnected();
-            // Debug: Log the API connection status
-            if ($this->loggingSystem && $this->loggingSystem->isDebugEnabled()) {
-                $this->loggingSystem->logActivity('JavaScript localization - apiConnected: ' . ($apiConnected ? 'true' : 'false'), 'debug');
-            }
             wp_localize_script('ctm-admin-tab-control-js', 'ctmAdminVars', [
                 'apiConnected' => $apiConnected,
                 'ajaxurl' => admin_url('admin-ajax.php'),

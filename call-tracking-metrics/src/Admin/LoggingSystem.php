@@ -390,7 +390,13 @@ class LoggingSystem
             }
             
             $grouped[$group_key]['count']++;
-            $grouped[$group_key]['last_seen'] = $log['timestamp'];
+            // Keep real time boundaries regardless of row order.
+            if (strcmp((string) $log['timestamp'], (string) $grouped[$group_key]['first_seen']) < 0) {
+                $grouped[$group_key]['first_seen'] = $log['timestamp'];
+            }
+            if (strcmp((string) $log['timestamp'], (string) $grouped[$group_key]['last_seen']) > 0) {
+                $grouped[$group_key]['last_seen'] = $log['timestamp'];
+            }
             $grouped[$group_key]['total_logs'][] = $log;
             
             // Keep up to 3 examples
@@ -411,6 +417,21 @@ class LoggingSystem
     }
 
     /**
+     * Build a stable group key for a log entry.
+     *
+     * Exposed for AJAX handlers so server-side render and paginated loading use
+     * identical grouping logic.
+     *
+     * @since 2.1.8
+     * @param array $log The log entry
+     * @return string A group key for this log entry
+     */
+    public function buildLogGroupKey(array $log): string
+    {
+        return $this->getLogGroupKey($log);
+    }
+
+    /**
      * Generate a group key for log entries
      * 
      * Creates consistent grouping keys for similar log entries
@@ -421,8 +442,8 @@ class LoggingSystem
      */
     private function getLogGroupKey(array $log): string
     {
-        $type = $log['type'];
-        $message = $log['message'];
+        $type = (string) ($log['type'] ?? 'unknown');
+        $message = (string) ($log['message'] ?? '');
         $context = $log['context'] ?? [];
         
         // Special handling for API calls
@@ -447,10 +468,35 @@ class LoggingSystem
             }
         }
         
-        // For other message types, group by first part of message
-        $words = explode(' ', $message);
-        $first_word = $words[0] ?? '';
-        return $type . ':' . $first_word;
+        // For non-API logs, group by normalized message signature to avoid
+        // unrelated messages with the same first word being merged together.
+        $normalized_message = $this->normalizeMessageForGrouping($message);
+        return $type . ':msg:' . substr(sha1($normalized_message), 0, 16);
+    }
+
+    /**
+     * Normalize log messages before generating a grouping signature.
+     *
+     * @since 2.1.8
+     * @param string $message The original log message
+     * @return string Normalized message signature source
+     */
+    private function normalizeMessageForGrouping(string $message): string
+    {
+        $message = trim(strtolower($message));
+
+        $patterns = [
+            '/https?:\/\/\S+/i' => '{url}',
+            '/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i' => '{uuid}',
+            '/\b\d+\b/' => '{num}',
+            '/\s+/' => ' ',
+        ];
+
+        foreach ($patterns as $pattern => $replacement) {
+            $message = preg_replace($pattern, $replacement, $message);
+        }
+
+        return substr((string) $message, 0, 200);
     }
 
     /**

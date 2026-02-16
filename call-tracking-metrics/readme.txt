@@ -2,10 +2,8 @@
 Contributors: CallTrackingMetrics
 Tags: Call tracking, Conversation analytics, Marketing Attribution, Google Ads, Advertising, SEO
 Requires at least: 6.5
-Tested up to: 6.9
-Stable tag: 2.1.7
-Requires at least: 6.0
-Tested up to: 6.4
+Tested up to: 6.9.1
+Stable tag: 2.1.8
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -21,6 +19,12 @@ CallTrackingMetrics integrates with your WordPress site to provide powerful call
 3. Use the Settings -> CallTrackingMetrics screen to configure the plugin.
 
 == Changelog ==
+
+= 2.1.8 =
+* Fix: Restore legacy Gravity Forms country-code behavior for standard phone fields (`country_code = 1`) and avoid sending country names (for example, `United States`) as `country_code`.
+* Fix: Sync with CTM now reliably loads all available CTM forms across pages and sorts them alphabetically by name.
+* Fix: clean up debug logs.
+* Change: duplicate submission prevention is now disabled by default, and existing installs are migrated to disabled with a one-time admin notice.
 
 = 2.1.7 =
 * Fix: Gravity Forms phone detection now prioritizes the field type, matching legacy behavior.

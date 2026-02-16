@@ -19,7 +19,17 @@ $apiStatus = $apiStatus ?? 'not_connected';
 $active_tab = $active_tab ?? 'general';
 $tab_content = $tab_content ?? '';
 $notices = $notices ?? [];
+$showDuplicatePreventionMigrationNotice = $showDuplicatePreventionMigrationNotice ?? false;
 ?>
+
+<?php if ($showDuplicatePreventionMigrationNotice): ?>
+    <div id="ctm-migration-top-banner" class="mb-4 rounded border-l-4 border-yellow-400 bg-yellow-50 px-4 py-3 text-yellow-800">
+        <p class="m-0">
+            <strong><?php _e('CallTrackingMetrics:', 'call-tracking-metrics'); ?></strong>
+            <?php _e('Duplicate submission prevention was turned off automatically in version 2.1.8. You can re-enable it in the General tab under Duplicate Prevention.', 'call-tracking-metrics'); ?>
+        </p>
+    </div>
+<?php endif; ?>
 
 <!-- Success Notices at the very top of the page -->
 <?php if (!empty($notices)): ?>

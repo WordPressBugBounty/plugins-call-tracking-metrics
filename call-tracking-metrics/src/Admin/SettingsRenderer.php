@@ -65,8 +65,6 @@ class SettingsRenderer
      */
     public function renderView(string $view, array $vars = []): void
     {
-        $this->ensureAdminNoticesAbove();
-
         if ($this->viewLoader && is_callable($this->viewLoader)) {
             $phpCode = call_user_func($this->viewLoader, $view);
             if ($phpCode === null) {
@@ -99,19 +97,6 @@ class SettingsRenderer
         
         // Include the view file
         include $realViewPath;
-    }
-
-    /**
-     * Ensure WordPress admin notices render above custom UI.
-     *
-     * @since 2.0.0
-     * @return void
-     */
-    private function ensureAdminNoticesAbove(): void
-    {
-        if (!did_action('admin_notices')) {
-            do_action('admin_notices');
-        }
     }
 
     /**

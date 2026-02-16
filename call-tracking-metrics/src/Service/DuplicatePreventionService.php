@@ -288,7 +288,7 @@ class DuplicatePreventionService
     public function getSettings(): array
     {
         return [
-            'enabled' => (bool) get_option('ctm_duplicate_prevention_enabled', true),
+            'enabled' => (bool) get_option('ctm_duplicate_prevention_enabled', false),
             'expiration_seconds' => (int) get_option('ctm_duplicate_prevention_expiration', self::DEFAULT_EXPIRATION),
             'use_ctm_session' => (bool) get_option('ctm_duplicate_prevention_use_session', true),
             'fallback_to_ip' => (bool) get_option('ctm_duplicate_prevention_fallback_ip', true)

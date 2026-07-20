@@ -94,8 +94,9 @@ class CF7Service extends BaseFormService
                 
                 // Preserve field-name matching and support placeholder labels for
                 // forms whose shortcode names do not contain "name".
-                if (strpos($fieldNameLower, 'name') !== false ||
-                    in_array($normalizedLabel, ['name', 'full name', 'contact name', 'first name', 'last name'], true)) {
+                if ($callerName === '' &&
+                    (strpos($fieldNameLower, 'name') !== false ||
+                     in_array($normalizedLabel, ['name', 'full name', 'contact name', 'first name', 'last name'], true))) {
                     $callerName = $this->sanitizeFieldValue($fieldValue);
                     $primaryFieldNames[$fieldName] = true;
                 }

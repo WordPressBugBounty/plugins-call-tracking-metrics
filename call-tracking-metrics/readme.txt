@@ -3,7 +3,7 @@ Contributors: CallTrackingMetrics
 Tags: Call tracking, Conversation analytics, Marketing Attribution, Google Ads, Advertising, SEO
 Requires at least: 6.5
 Tested up to: 7.0.2
-Stable tag: 2.1.10
+Stable tag: 2.1.11
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -19,6 +19,10 @@ CallTrackingMetrics integrates with your WordPress site to provide powerful call
 3. Use the Settings -> CallTrackingMetrics screen to configure the plugin.
 
 == Changelog ==
+
+= 2.1.11 =
+* Fix: Keep Contact Form 7 company fields from replacing the caller name.
+* Fix: Prefer Gravity Forms visible labels and placeholders over admin labels when detecting caller names.
 
 = 2.1.10 =
 * Compatibility: Tested with WordPress 7.0.2.

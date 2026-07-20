@@ -674,8 +674,8 @@ class GFService extends BaseFormService
      * Get a usable Gravity Forms field name when labels are intentionally blank.
      *
      * Forms that display placeholder text instead of visible labels can provide
-     * blank field labels to the submission hook. Preserve an admin label when
-     * one exists, then fall back to the display label and placeholder.
+     * blank field labels to the submission hook. Prefer the display label and
+     * placeholder, then use an admin label when no visible metadata exists.
      *
      * @param object $field    Gravity Forms field object
      * @param string $fallback Value to use when the field has no usable metadata
@@ -683,7 +683,7 @@ class GFService extends BaseFormService
      */
     private function getFieldLabel(object $field, string $fallback): string
     {
-        foreach (['adminLabel', 'label', 'placeholder'] as $property) {
+        foreach (['label', 'placeholder', 'adminLabel'] as $property) {
             if (!isset($field->{$property})) {
                 continue;
             }

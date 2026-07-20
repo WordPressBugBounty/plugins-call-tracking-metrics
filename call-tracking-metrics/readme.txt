@@ -2,8 +2,8 @@
 Contributors: CallTrackingMetrics
 Tags: Call tracking, Conversation analytics, Marketing Attribution, Google Ads, Advertising, SEO
 Requires at least: 6.5
-Tested up to: 6.9.1
-Stable tag: 2.1.8
+Tested up to: 7.0.2
+Stable tag: 2.1.10
 Requires PHP: 8.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -19,6 +19,13 @@ CallTrackingMetrics integrates with your WordPress site to provide powerful call
 3. Use the Settings -> CallTrackingMetrics screen to configure the plugin.
 
 == Changelog ==
+
+= 2.1.10 =
+* Compatibility: Tested with WordPress 7.0.2.
+
+= 2.1.9 =
+* Fix: Capture Gravity Forms caller names and emails when labels are blank and fields use placeholders.
+* Fix: Capture Contact Form 7 caller names from Name-style placeholders when shortcode names are neutral, while preserving type-based email detection.
 
 = 2.1.8 =
 * Fix: Restore legacy Gravity Forms country-code behavior for standard phone fields (`country_code = 1`) and avoid sending country names (for example, `United States`) as `country_code`.

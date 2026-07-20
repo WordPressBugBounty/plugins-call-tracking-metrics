@@ -18,14 +18,14 @@
  * @author      CallTrackingMetrics Team
  * @copyright   2024 CallTrackingMetrics
  * @license     GPL-2.0+
- * @version     2.1.8
+ * @version     2.1.10
  * @link        https://calltrackingmetrics.com
  *
  * @wordpress-plugin
  * Plugin Name: CallTrackingMetrics
  * Plugin URI: https://calltrackingmetrics.com
  * Description: A call tracking solution for WordPress - tracks errors, analytics, security, performance and more
- * Version: 2.1.8
+ * Version: 2.1.10
  * Requires PHP: 8.2
  * Author: CallTrackingMetrics Team
  */
@@ -73,7 +73,7 @@ if (!defined('CTM_PLUGIN_FILE')) {
 
 // Define plugin version constant
 if (!defined('CTM_VERSION')) {
-    define('CTM_VERSION', '2.1.8');
+    define('CTM_VERSION', '2.1.10');
 }
 
 // Import required classes

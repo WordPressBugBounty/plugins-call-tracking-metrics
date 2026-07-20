@@ -74,35 +74,38 @@ class CF7Service extends BaseFormService
             $phoneNumber = '';
             $callerName = '';
             $email = '';
+            $primaryFieldNames = [];
             
-            // Find phone number field
+            // Find primary contact fields. CF7 field names are arbitrary, so use
+            // the parsed shortcode type and placeholder-derived label as metadata.
             foreach ($data as $fieldName => $fieldValue) {
                 $fieldType = $fieldTypeMap[$fieldName] ?? $this->normalizeFieldType($fieldName);
                 $fieldNameLower = strtolower($fieldName);
+                $fieldLabel = $fieldLabelMap[$fieldName] ?? '';
+                $normalizedLabel = strtolower(trim(preg_replace('/[\s_-]+/', ' ', $fieldLabel)));
                 
                 // Map phone number to required field
                 if ($fieldType === 'phone' || $fieldType === 'tel' || 
                     strpos($fieldNameLower, 'phone') !== false || 
                     strpos($fieldNameLower, 'tel') !== false) {
                     $phoneNumber = $this->sanitizeFieldValue($fieldValue);
+                    $primaryFieldNames[$fieldName] = true;
                 }
                 
-                // Map name field
-                if (strpos($fieldNameLower, 'name') !== false && 
-                    (strpos($fieldNameLower, 'first') !== false || 
-                     strpos($fieldNameLower, 'last') !== false || 
-                     strpos($fieldNameLower, 'full') !== false)) {
+                // Preserve field-name matching and support placeholder labels for
+                // forms whose shortcode names do not contain "name".
+                if (strpos($fieldNameLower, 'name') !== false ||
+                    in_array($normalizedLabel, ['name', 'full name', 'contact name', 'first name', 'last name'], true)) {
                     $callerName = $this->sanitizeFieldValue($fieldValue);
-                }
-                if (empty($callerName) && strpos($fieldNameLower, 'name') !== false) {
-                    $callerName = $this->sanitizeFieldValue($fieldValue);
+                    $primaryFieldNames[$fieldName] = true;
                 }
                 
-                // Map email field
+                // CF7 email fields are identified by shortcode type even when the
+                // field name and visible label do not include "email".
                 if ($fieldType === 'email' || strpos($fieldNameLower, 'email') !== false) {
-                    $email = $this->sanitizeFieldValue($fieldValue);
+                    $email = $this->sanitizeFieldValue($fieldValue, 'email');
+                    $primaryFieldNames[$fieldName] = true;
                 }
-                
             }
 
             // Build form_reactor array
@@ -117,12 +120,8 @@ class CF7Service extends BaseFormService
             $legacyFields = [];
             $legacyLabels = [];
             foreach ($mappedFields as $fieldName => $fieldValue) {
-                $fieldNameLower = strtolower($fieldName);
-                // Skip fields that are already mapped to primary contact fields
-                if (strpos($fieldNameLower, 'phone') !== false || 
-                    strpos($fieldNameLower, 'tel') !== false ||
-                    strpos($fieldNameLower, 'name') !== false ||
-                    strpos($fieldNameLower, 'email') !== false) {
+                // Skip fields that are already mapped to primary contact fields.
+                if (isset($primaryFieldNames[$fieldName])) {
                     continue;
                 }
                 $legacyFields[$fieldName] = $fieldValue;

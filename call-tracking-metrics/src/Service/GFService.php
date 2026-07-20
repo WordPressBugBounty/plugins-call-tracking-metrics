@@ -73,7 +73,7 @@ class GFService extends BaseFormService
                         continue;
                     }
                     $fieldId = (string)$field->id;
-                    $fieldLabel = $field->label ?? ('Field ' . $fieldId);
+                    $fieldLabel = $this->getFieldLabel($field, 'Field ' . $fieldId);
                     $fieldType = $field->type ?? 'text';
                     
                     $fieldMapping[$fieldId] = $fieldLabel;
@@ -86,7 +86,10 @@ class GFService extends BaseFormService
                                 continue;
                             }
                             $inputId = (string)$input['id'];
-                            $inputLabel = $input['label'] ?? ($fieldLabel . ' ' . $inputId);
+                            $inputLabel = trim((string)($input['label'] ?? ''));
+                            if ($inputLabel === '') {
+                                $inputLabel = $fieldLabel . ' ' . $inputId;
+                            }
                             $fieldMapping[$inputId] = $inputLabel;
                             $fieldTypes[$inputId] = $fieldType;
                         }
@@ -206,16 +209,32 @@ class GFService extends BaseFormService
                 $formReactor['caller_name'] = $callerName;
             }
             
-            // Find email field
+            // Find email field. Prefer the GF field type because labels can be blank
+            // when a form uses placeholders as its visible field names.
             $emailField = '';
-            foreach ($fieldsWithLabels as $fieldName => $value) {
-                $fieldNameLower = strtolower($fieldName);
-                if (strpos($fieldNameLower, 'email') !== false) {
-                    $emailField = $value;
-                    break;
+            if (!empty($form['fields']) && is_array($form['fields'])) {
+                foreach ($form['fields'] as $field) {
+                    if (!is_object($field) || !isset($field->id) || ($field->type ?? '') !== 'email') {
+                        continue;
+                    }
+
+                    $emailField = $this->sanitizeFieldValue($entry[$field->id] ?? '', 'email');
+                    if ($emailField !== '') {
+                        break;
+                    }
                 }
             }
-            if (!empty($emailField)) {
+            if ($emailField === '') {
+                foreach ($fieldsWithLabels as $fieldName => $value) {
+                    if (strpos(strtolower($fieldName), 'email') !== false) {
+                        $emailField = $this->sanitizeFieldValue($value, 'email');
+                        if ($emailField !== '') {
+                            break;
+                        }
+                    }
+                }
+            }
+            if ($emailField !== '') {
                 $formReactor['email'] = $emailField;
             }
 
@@ -235,7 +254,8 @@ class GFService extends BaseFormService
                     $fieldId = $field->id;
                     
                     // Skip admin/internal fields
-                    if ($this->isAdminField($field->type, $field->label ?? '')) {
+                    $fieldLabel = $this->getFieldLabel($field, 'Field ' . $fieldId);
+                    if ($this->isAdminField($field->type, $fieldLabel)) {
                         continue;
                     }
                     
@@ -281,7 +301,7 @@ class GFService extends BaseFormService
                     if (!empty($cleanValue)) {
                         $legacyKey = 'field_' . $fieldId;
                         $legacyFields[$legacyKey] = $cleanValue;
-                        $legacyLabels[$legacyKey] = $field->label ?? "Field $fieldId";
+                        $legacyLabels[$legacyKey] = $fieldLabel;
                     }
                 }
             }
@@ -647,10 +667,34 @@ class GFService extends BaseFormService
      */
     private function getFieldName($field): string
     {
-        // Use admin label if available, otherwise use label
-        $adminLabel = isset($field->adminLabel) ? $field->adminLabel : null;
-        $label = isset($field->label) ? $field->label : null;
-        return $adminLabel ?: $label ?: "Field {$field->id}";
+        return $this->getFieldLabel($field, "Field {$field->id}");
+    }
+
+    /**
+     * Get a usable Gravity Forms field name when labels are intentionally blank.
+     *
+     * Forms that display placeholder text instead of visible labels can provide
+     * blank field labels to the submission hook. Preserve an admin label when
+     * one exists, then fall back to the display label and placeholder.
+     *
+     * @param object $field    Gravity Forms field object
+     * @param string $fallback Value to use when the field has no usable metadata
+     * @return string
+     */
+    private function getFieldLabel(object $field, string $fallback): string
+    {
+        foreach (['adminLabel', 'label', 'placeholder'] as $property) {
+            if (!isset($field->{$property})) {
+                continue;
+            }
+
+            $value = trim((string)$field->{$property});
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return $fallback;
     }
 
     /**
